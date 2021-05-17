@@ -192,6 +192,10 @@ public:
 public:
     QString GetFunLineInfor(const char* sFuncName,int iLineNum);
     void DoDevice();
+    int  OpenRsu(QString devname);
+    int  CloseRsu();
+    int  InitRsu(char* szTime, int iBstInterval, int iPower, int iChannelID, int iTimerOut);
+
     bool is_device_open()
     {
         return m_lfd > 0;

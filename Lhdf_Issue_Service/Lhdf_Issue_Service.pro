@@ -8,6 +8,7 @@ CONFIG += console
 
 HEADERS += \
            src/controller/jsoncontroller.h \
+           src/controller/lhdfcontroller.h \
            src/controller/logincontroller.h \
            src/global.h \
            src/obulive.h \
@@ -20,6 +21,7 @@ HEADERS += \
 
 SOURCES += src/main.cpp \
            src/controller/jsoncontrller.cpp \
+           src/controller/lhdfcontroller.cpp \
            src/controller/logincontroller.cpp \
            src/global.cpp \
            src/obulive.cpp \

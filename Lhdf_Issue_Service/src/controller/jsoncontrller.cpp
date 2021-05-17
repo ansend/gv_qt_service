@@ -85,6 +85,8 @@ void JsonController::service(HttpRequest& request, HttpResponse& response)
         qDebug(QJsonDocument(jsonObject).toJson(QJsonDocument::Compact));
 
 
+        QString mode = jsonObject.value("mode1").toString();
+        qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"ansen mode value:" << mode;//qDebug().noquote()取消打印转义符号
 
         if(!jsonObject.contains("response"))
         {

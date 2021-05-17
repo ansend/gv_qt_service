@@ -15,6 +15,7 @@
 #include "controller/sessioncontroller.h"
 #include "controller/logincontroller.h"
 #include "controller/jsoncontroller.h"
+#include "controller/lhdfcontroller.h"
 
 RequestMapper::RequestMapper(QObject* parent)
     :HttpRequestHandler(parent)
@@ -43,6 +44,10 @@ void RequestMapper::service(HttpRequest& request, HttpResponse& response)
     else if (path.startsWith("/json"))
     {
         JsonController().service(request, response);
+    }
+    else if (path.startsWith("/obu/gdlhdf"))
+    {
+        LhdfController().service(request, response);
     }
 
     else if (path.startsWith("/template"))

@@ -55,7 +55,7 @@ QString searchConfigFile()
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc,argv);
-    app.setApplicationName("Demo1");
+    app.setApplicationName("Lhdf_Issue_Service");
     //MyTimer timer;
     // Find the configuration file
     QString configFileName=searchConfigFile();

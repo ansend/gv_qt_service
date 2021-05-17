@@ -261,6 +261,87 @@ void  RsuSdk::DoDevice()
     }
 }
 
+int RsuSdk::OpenRsu(QString devname)
+{
+    if((nullptr == m_pDevLib) || !m_pDevLib->isLoaded())
+    {
+        qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"设备动态库还未加载";
+        return -1;
+    }
+    // if the device has been opened, just close it and reopen.
+    if(m_lfd > 0)
+    {
+        RSU_Close(m_lfd);
+        m_lfd = 0;
+        //ui->pbDevice->setText("连接设备");
+        qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"设备已断开";
+    }
+
+    m_lfd = RSU_Open(0, devname.toLatin1().data(), 0);
+    if(m_lfd <= 0)
+    {
+        qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"连接设备失败";
+        return -1;
+    }
+
+    return  0;
+
+}
+
+int RsuSdk::CloseRsu()
+{
+    if((nullptr == m_pDevLib) || !m_pDevLib->isLoaded())
+    {
+        qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"设备动态库还未加载";
+        return -1;
+    }
+
+    RSU_Close(m_lfd);
+    m_lfd = 0;
+        //ui->pbDevice->setText("连接设备");
+    qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"设备已断开";
+    return 0;
+
+
+}
+
+int RsuSdk::InitRsu(char *szTime, int iBstInterval, int iPower, int iChannelID, int iTimerOut)
+{
+    if(m_lfd <= 0)
+    {
+
+        qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"设备未打开";
+
+    }
+    else
+    {
+        int iRet = RSU_INIT_rq(m_lfd,nullptr, iBstInterval, 31, iChannelID, DEV_TIMEOUT);
+        if(0 != iRet)
+        {
+            RSU_Close(m_lfd);
+            m_lfd = 0;
+            qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"设备初始化请求失败";
+            return -1;
+        }
+
+        int iStatus = 0, iRlen = 0;
+        char szRsuInfo[12] = {0};
+        iRet = RSU_INIT_rs(m_lfd,&iStatus,&iRlen,szRsuInfo, DEV_TIMEOUT);
+        if(0 != iRet)
+        {
+            RSU_Close(m_lfd);
+            m_lfd = 0;
+            qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"设备初始化响应失败";
+            return -1;
+        }
+
+        //ui->pbDevice->setText("断开设备");
+        qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"设备已连接";
+        qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"设备已连接";
+    }
+
+}
+
 int RsuSdk::HexToBin(unsigned char *shex, unsigned char *sbin, int shex_len)
 {
     int len = 0, j = 0;
