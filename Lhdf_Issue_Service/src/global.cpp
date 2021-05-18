@@ -305,17 +305,18 @@ int RsuSdk::CloseRsu()
 
 }
 
-int RsuSdk::InitRsu(char *szTime, int iBstInterval, int iPower, int iChannelID, int iTimerOut)
+int RsuSdk::InitRsu(char *szTime, int iBstInterval, int iPower, int iChannelID, int iTimerOut, char* rsuInfo, int lenRsuInfo)
 {
     if(m_lfd <= 0)
     {
 
         qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"设备未打开";
+        return -1;
 
     }
     else
     {
-        int iRet = RSU_INIT_rq(m_lfd,nullptr, iBstInterval, 31, iChannelID, DEV_TIMEOUT);
+        int iRet = RSU_INIT_rq(m_lfd,nullptr, iBstInterval, iPower, iChannelID, DEV_TIMEOUT);
         if(0 != iRet)
         {
             RSU_Close(m_lfd);
@@ -325,7 +326,7 @@ int RsuSdk::InitRsu(char *szTime, int iBstInterval, int iPower, int iChannelID, 
         }
 
         int iStatus = 0, iRlen = 0;
-        char szRsuInfo[12] = {0};
+        char szRsuInfo[128] = {0};
         iRet = RSU_INIT_rs(m_lfd,&iStatus,&iRlen,szRsuInfo, DEV_TIMEOUT);
         if(0 != iRet)
         {
@@ -335,10 +336,61 @@ int RsuSdk::InitRsu(char *szTime, int iBstInterval, int iPower, int iChannelID, 
             return -1;
         }
 
+        //unsigned char hexRsuInfo[256]  = {0};
+        BinToHex((unsigned char*)szRsuInfo, (unsigned char*)rsuInfo, iRlen);
+
+        QString retinfo = (char*)rsuInfo;
+
+        qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"len:"<< iRlen * 2 <<"rsu return info:" << rsuInfo;
+        qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"rsu return info:" << retinfo;
+        lenRsuInfo = iRlen * 2;
+        rsuInfo[lenRsuInfo] = '\0';
+
         //ui->pbDevice->setText("断开设备");
         qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"设备已连接";
-        qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"设备已连接";
     }
+
+    return 0;
+
+}
+
+int RsuSdk::TransferChannel(int *iMode, int *iDID, int * iChannelID, int *iAPDUList, char *szAPDU, char *retAPDU, int *iReturnStatus)
+{
+    KeepOBUOnPowerStop();
+    QThread::msleep(50);  //make sure the keep alive timer has been stoped and disabled.
+    unsigned char szAPDUin[128] = {0},CosRsp[128] = {0};
+
+    qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"start to send transchannel";
+
+    HexToBin((unsigned char*)szAPDU, szAPDUin, strlen(szAPDU) );
+    int iRet = TransferChannel_rq(m_lfd, *iMode, *iDID, *iChannelID, *iAPDUList, reinterpret_cast<char*>(szAPDUin), DEV_TIMEOUT);
+
+    qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"transchannel ret:"<< iRet;
+
+    if(0 != iRet) return iRet;
+
+
+    *iAPDUList = 0;
+    memset(szAPDUin,0x00,sizeof(szAPDUin));
+    qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"start to recv transchannel";
+
+    iRet = TransferChannel_rs(m_lfd, iDID, iChannelID, iAPDUList, (char*)szAPDUin, iReturnStatus, DEV_TIMEOUT);
+    qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"recv transchannel ret:" << iRet;
+
+    if(0 != iRet) return iRet;
+
+    int len = GetLenOfApdu(szAPDUin, *iAPDUList);
+
+    BinToHex(szAPDUin,reinterpret_cast<unsigned char*>(retAPDU), len);
+
+
+    qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"len:" << len;
+
+    qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"transfer channel response:" << QString(retAPDU);
+
+
+    KeepOBUOnPowerStart();
+    return 0;
 
 }
 
@@ -427,6 +479,18 @@ int RsuSdk::GetOneApdu(unsigned char *szApdu, int iApdulist, int iIndex, unsigne
     iSW12 = GetSw12(&p[len - 2]);
 
     return iSW12;
+}
+
+int RsuSdk::GetLenOfApdu(unsigned char *szApdu, int iApdulist)
+{
+    //04 xx xx 90 00 05 xx xx xx 90 00
+    int len = 0;
+    for (int i = 0; i < iApdulist; i++)
+    {
+        len += szApdu[len];
+        len += 1;
+    }
+    return len;
 }
 
 int RsuSdk::KeepOBUOnPowerStart()
@@ -605,7 +669,7 @@ void RsuSdk::start_test_timer()
 
 void RsuSdk::stop_test_timer()
 {
-    qWarning() << "start testing timer";
+    qWarning() << "stop testing timer";
     if(m_pOBUKeepOnPowerTimer->isActive())
     {
         m_pOBUKeepOnPowerTimer->stop();
@@ -621,7 +685,7 @@ int RsuSdk::start_testing()
     //}
     //MyThread::enable_flag = false;
 
-    emit start_testing_signal();
+    //emit start_testing_signal();
 
     return 0;
 }

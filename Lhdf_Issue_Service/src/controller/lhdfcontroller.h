@@ -20,7 +20,9 @@ public:
         ERR_NO_ERROR             = 0,
         ERR_INVALID_REQUEST_PARA = 1,
         ERR_OPEN_DEVICE_FALIED,
-        ERR_CLOSE_DEVICE_FALIED
+        ERR_CLOSE_DEVICE_FALIED,
+        ERR_INIT_DEVICE_FALIED,
+        ERR_TRANSCHANNEL_FALIED
 
 
     };
@@ -39,11 +41,38 @@ public:
               ret = "Open Device Failed";
             break;
            case ERR_CLOSE_DEVICE_FALIED:
-              ret = "Open Device Failed";
+              ret = "Init Device Failed";
+            break;
+           case ERR_TRANSCHANNEL_FALIED:
+             ret = "Transfer Channel Failed";
             break;
         default:
             break;
 
+        }
+
+        return ret;
+
+    }
+
+    int get_httpstatus_by_errcode(ERR_CODE code)
+    {
+        int ret = 200;
+        switch(code){
+           case ERR_NO_ERROR:
+              ret = 200;
+              break;
+           case ERR_INVALID_REQUEST_PARA:
+              ret =  400;
+            break;
+           case ERR_OPEN_DEVICE_FALIED:
+           case ERR_CLOSE_DEVICE_FALIED:
+           case ERR_INIT_DEVICE_FALIED:
+           case ERR_TRANSCHANNEL_FALIED:
+              ret = 500;
+            break;
+        default:
+            break;
         }
 
         return ret;
@@ -59,6 +88,11 @@ public:
     void rsu_open(HttpRequest& request, HttpResponse& response, const QJsonObject& root);
     void rsu_close(HttpRequest& request, HttpResponse& response, const QJsonObject& root);
     void rsu_init(HttpRequest& request, HttpResponse& response, const QJsonObject& root);
+    void transfer_channel(HttpRequest& request, HttpResponse& response, const QJsonObject& root);
+    void issue_finish_and_initialization(HttpRequest& request, HttpResponse& response, const QJsonObject& root);
+    void init_obu(HttpRequest& request, HttpResponse& response, const QJsonObject& root);
+
+    static QMap<int, QString> status_map;
 };
 
 

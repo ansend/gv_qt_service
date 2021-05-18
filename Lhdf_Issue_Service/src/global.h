@@ -167,6 +167,7 @@ public:
     int  GetSw12(unsigned char *szSW12);
     int  GetOneApdu(unsigned char *szApdu, int iApdulist, int iIndex, unsigned char *szOutApdu, int *iOutApdLen);
 
+    int  GetLenOfApdu(unsigned char *szApdu, int iApdulist);
 
 
     int  KeepOBUOnPowerStart();
@@ -194,7 +195,13 @@ public:
     void DoDevice();
     int  OpenRsu(QString devname);
     int  CloseRsu();
-    int  InitRsu(char* szTime, int iBstInterval, int iPower, int iChannelID, int iTimerOut);
+    // rsuInfo : return parameter. returned rsu init response info.
+    // szRsuInfo  in/out parameter.
+    int  InitRsu(char* szTime, int iBstInterval, int iPower, int iChannelID, int iTimerOut, char* rsuInfo, int lenRsuInfo);
+
+
+    //in/out parameter. iMode, iMode, iChannelID, iAPDUList.
+    int  TransferChannel(int* iMode, int* iDID, int* iChannelID, int* iAPDUList, char* szAPDU, char* retAPDU, int* iReturnStatus);
 
     bool is_device_open()
     {
