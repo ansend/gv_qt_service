@@ -38,6 +38,24 @@ void LhdfController::service(HttpRequest& request, HttpResponse& response)
     reqinfo.append(request.getPeerAddress().toString());
 
 
+
+    QByteArray method = request.getMethod();
+
+    if(method.toUpper() == "OPTIONS")
+    {
+        qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"收到OPTIONS数据";
+
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Content-Type");
+        response.setHeader("Access-Control-Max-Age", "1728000");
+        response.setStatus(204,"No Content");
+        response.write("",true);
+        return;
+
+    }
+
+
     QByteArray body_j = request.getBody();
     QByteArray body_tosend ;
 
@@ -74,6 +92,8 @@ void LhdfController::service(HttpRequest& request, HttpResponse& response)
     QJsonObject jsonObject = jsonDoc.object();
 
 
+
+
     QByteArray path=request.getPath();
     qDebug("RequestMapper: path=%s",path.data());
 
@@ -92,7 +112,7 @@ void LhdfController::service(HttpRequest& request, HttpResponse& response)
         return;
 
     }
-    else if (path.endsWith("RSUInit"))
+    else if (path.endsWith("RSUPInit"))
     {
         qDebug("RequestMapper: path=%s", "match");
         rsu_init(request, response, jsonObject);
@@ -331,6 +351,10 @@ void LhdfController::rsu_open(HttpRequest &request, HttpResponse &response, cons
     jsonResp["msg"]  = get_errmsg_from_code(err);
     qDebug().noquote()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<QJsonDocument(jsonResp).toJson();//qDebug().noquote()取消打印转义符号
     bodySend = QJsonDocument(jsonResp).toJson();
+
+    response.setHeader("Access-Control-Allow-Origin", "*");
+    response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+    response.setHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Content-Type");
     response.write(bodySend,true);
 
 }
@@ -458,6 +482,18 @@ void LhdfController::rsu_init(HttpRequest &request, HttpResponse &response, cons
        response.setStatus(get_httpstatus_by_errcode(err), status_map[get_httpstatus_by_errcode(err)].toLatin1());
     }
     bodySend = QJsonDocument(jsonResp).toJson();
+
+
+    // just test init obu here.
+    char sEsamID[9] = {0},sObuID[17] = {0},sObuMac[9] = {0},sRandom[9] = {0};
+    char sCosIns[128] = {0};
+    sdk_g->OBUSearch(sObuMac);
+
+    //end
+
+    response.setHeader("Access-Control-Allow-Origin", "*");
+    response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+    response.setHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Content-Type");
     response.write(bodySend,true);
 
 }
@@ -564,6 +600,10 @@ void LhdfController::transfer_channel(HttpRequest &request, HttpResponse &respon
        response.setStatus(get_httpstatus_by_errcode(err), status_map[get_httpstatus_by_errcode(err)].toLatin1());
     }
     bodySend = QJsonDocument(jsonResp).toJson();
+
+    response.setHeader("Access-Control-Allow-Origin", "*");
+    response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+    response.setHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Content-Type");
     response.write(bodySend,true);
 
 }
@@ -602,7 +642,7 @@ void LhdfController::issue_finish_and_initialization(HttpRequest &request, HttpR
 
     if(ERR_NO_ERROR == err)
     {
-;
+
        if(sdk_g->OBURelease(1,1)){
            err = ERR_TRANSCHANNEL_FALIED;
        }
@@ -611,16 +651,34 @@ void LhdfController::issue_finish_and_initialization(HttpRequest &request, HttpR
     QString flag;
     flag.sprintf("%05d", int(err));
     qDebug()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<"flag" << flag;
-    jsonResp["flag"] = flag;
+    //jsonResp["flag"] = flag;
+    jsonResp["flag"] = "00001";
     jsonResp["msg"]  = get_errmsg_from_code(err);
 
-    jsonResp["resp"] = QString().sprintf("%s", "9000");
+    //jsonResp["resp"] = QString().sprintf("%s", "9000");
+    jsonResp["resp"] = QString().sprintf("%s", "0001");
 
     qDebug().noquote()<<qPrintable(GetFunLineInfor(__FUNCTION__,__LINE__))<<QJsonDocument(jsonResp).toJson();//qDebug().noquote()取消打印转义符号
     if(ERR_NO_ERROR != err){
        response.setStatus(get_httpstatus_by_errcode(err), status_map[get_httpstatus_by_errcode(err)].toLatin1());
     }
     bodySend = QJsonDocument(jsonResp).toJson();
+    response.setHeader("Access-Control-Allow-Origin", "*");
+    response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+    response.setHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Content-Type");
+
+
+
+/*
+    // debug function if no new OBU found no response to the web browse.
+    char sEsamID[9] = {0},sObuID[17] = {0},sObuMac[9] = {0},sRandom[9] = {0};
+    char sCosIns[128] = {0};
+
+    if( sdk_g->OBUSearch(sObuMac)){
+          return;
+    }
+*/
+
     response.write(bodySend,true);
 
 }
@@ -658,7 +716,7 @@ void LhdfController::init_obu(HttpRequest &request, HttpResponse &response, cons
 
     if(ERR_NO_ERROR == err)
     {
-;
+
        if( sdk_g->OBUSearch(sObuMac)){
            err = ERR_TRANSCHANNEL_FALIED;
        }
