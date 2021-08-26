@@ -17,7 +17,6 @@ MyThread::~MyThread()
 
 }
 
-
 void MyThread::run()
 {
     m_timer = new QTimer ;
@@ -35,12 +34,8 @@ void MyThread::run()
 
         }
         QThread::msleep(200);
-
     }
-
 }
-
-
 
 /*
 void MyThread::run()
@@ -48,11 +43,7 @@ void MyThread::run()
     m_timer = new QTimer ;
     connect(m_timer , SIGNAL(timeout()) , this , SLOT(slot_time())) ;
     m_timer->setInterval(200);
-
-
-
-    this->exec();
-
+    this->exec();  //run exec will cause signal/slot not work, why??
 }
 */
 
